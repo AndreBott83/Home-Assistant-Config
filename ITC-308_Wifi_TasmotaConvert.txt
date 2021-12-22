@@ -1,0 +1,72 @@
+1) Flasch using TasmotaConvert with Raspi
+2) Connect to Tasmota and upgrade firmware
+3) Set the Module Type Configuration → Configure Module, Select TuyaMCU (54), Click Apply. Wait for Reboot.
+3) physically restart device!
+4) start configurations over console:
+Display the Current Temperature Main Menu → Console, Enter TuyaMCU 71,104 and press enter.
+Display the Set Temperature Enter TuyaMCU 72,106 in the console and press enter.
+Remove the toggle button in the Web UI Enter TuyaMcu 99,1 in the console and press enter.
+
+Set to Celsius. This can be configured on the device with:
+  TuyaSend1 101,0
+  
+Set Temperature Set point to 4°C
+  TuyaSend2 106,40
+
+
+Cooling Because of the internal scaling by a factor of 10, this results in:
+  TuyaSend2 118,20
+Heating Because of the internal scaling by a factor of 10, this results in:
+  TuyaSend2 117,20
+
+
+MQTT Rules
+
+Rule1
+ON TuyaReceived#DpType2Id104 DO Publish stat/%topic%/308_sensor %value% ENDON
+ON TuyaReceived#DpType4Id115 DO Publish stat/%topic%/308_status %value% ENDON
+ON TuyaReceived#DpType2Id106 DO Publish stat/%topic%/308_set_point %value% ENDON
+ON TuyaReceived#DpType2Id117 DO Publish stat/%topic%/308_differential_heating %value% ENDON
+ON TuyaReceived#DpType2Id118 DO Publish stat/%topic%/308_differential_cooling %value% ENDON
+ON TuyaReceived#DpType2Id101 DO Publish stat/%topic%/308_unit %value% ENDON
+ON TuyaReceived#DpType2Id102 DO Publish stat/%topic%/308_calibration %value% ENDON
+ON TuyaReceived#DpType2Id108 DO Publish stat/%topic%/308_delay_time %value% ENDON
+ON TuyaReceived#DpType2Id109 DO Publish stat/%topic%/308_alarm_high %value% ENDON
+ON TuyaReceived#DpType2Id110 DO Publish stat/%topic%/308_alarm_low %value% ENDON
+
+Rule2
+Rule2
+ON System#Init DO TuyaSend1 101,0 ENDON
+ON Time#Minute DO TuyaSend2 2,1 ENDON
+
+Rule1 1
+Rule2 1
+
+Configure MQTT:
+- Hostname and choose a user
+
+Issue Commands over MQTT 
+e.g. stet setpoint to 4.0 ^C
+cmnd/ITC_308_54F765/TUYASEND2 106,40
+
+
+Backup
+https://tasmota.github.io/docs/TuyaMCU/
+dpId	Function points	Identifier	Data type	Function type	Properties
+101	Temperature unit	Cf	Issue and report	Integer	0=C, 1=F
+102	Calibration	Ca	Issue and report	Integer	Unit is 0.1C
+104	Temperature sensor	 	Issue and report	Integer	Unit is 0.1C
+106	Temperature set point	Ts	Issue and report	Integer	Unit is 0.1C
+108	Compressor delay time	Pt	Issue and report	Integer	Unit is minutes
+109	Alarm high temperature	Ah	Issue and report	Integer	Unit is 0.1C
+110	Alarm low temperature	Al	Issue and report	Integer	Unit is 0.1C, For negative values use -(0xFFFFFFFF - value)
+115	Relay status	 	Only report	Integer	01=cool, 02=off, 03=heating
+116	Temperature sensor	 	Issue and report	Integer	Unit is 0.1F
+117	Heating differential value	Hd	Issue and report	Integer	Unit is 0.1C
+118	Cooling differential value	Cd	Issue and report	Integer	Unit is 0.1C
+
+
+5) create mqtt discovery items for autodetection
+Set values over mqtt.publish: cmnd/ITC_308_54F765/TuyaSend2 w/ payload 106,450
+
+
